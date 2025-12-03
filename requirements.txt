@@ -1,12 +1,14 @@
-openai>=1.0.0
-google-generativeai>=0.3.0
-pillow>=10.0.0
-sentence-transformers>=2.2.0
-numpy>=1.24.0
-torch>=2.0.0
-requests>=2.31.0
-python-dotenv>=1.0.0
+# Production requirements for Railway (lightweight, fast deployment)
 flask>=3.0.0
 flask-cors>=4.0.0
 gunicorn>=21.2.0
+openai>=1.0.0
+google-generativeai>=0.3.0
+pillow>=10.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+numpy>=1.24.0
 
+# Note: torch and sentence-transformers removed for faster deployments
+# They're only needed for semantic search, which is optional
+# Full requirements with ML in requirements-full.txt

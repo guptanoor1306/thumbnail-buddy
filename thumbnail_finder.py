@@ -10,8 +10,17 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import numpy as np
 from PIL import Image
-from sentence_transformers import SentenceTransformer, util
-import torch
+
+# Optional ML dependencies (for semantic search)
+try:
+    from sentence_transformers import SentenceTransformer, util
+    import torch
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    SentenceTransformer = None
+    util = None
+    torch = None
 
 
 class ThumbnailFinder:
@@ -20,7 +29,7 @@ class ThumbnailFinder:
     def __init__(self, thumbnails_dir: str, index_file: str = "thumbnail_index.json"):
         self.thumbnails_dir = Path(thumbnails_dir)
         self.index_file = index_file
-        self.model = SentenceTransformer('clip-ViT-B-32')
+        self.model = SentenceTransformer('clip-ViT-B-32') if ML_AVAILABLE else None
         self.index_data = self._load_or_create_index()
         
     def _load_or_create_index(self) -> Dict:
