@@ -9,7 +9,9 @@ from flask_cors import CORS
 from pathlib import Path
 import os
 import json
+import uuid
 from dotenv import load_dotenv
+from PIL import Image
 
 load_dotenv(override=True)
 
@@ -19,6 +21,11 @@ from image_generator import ImageGenerator
 
 app = Flask(__name__)
 CORS(app)
+
+# Ensure required directories exist (important for Railway deployment)
+Path('thumbnails').mkdir(exist_ok=True)
+Path('generated_thumbnails').mkdir(exist_ok=True)
+Path('temp_uploads').mkdir(exist_ok=True)
 
 # Initialize finder globally
 finder = None
@@ -37,6 +44,15 @@ def init_finder():
 def index():
     """Serve main HTML page"""
     return render_template('index.html')
+
+@app.route('/health')
+def health():
+    """Health check endpoint for Railway"""
+    return jsonify({
+        'status': 'healthy',
+        'thumbnails_dir': Path('thumbnails').exists(),
+        'version': '1.0.0'
+    })
 
 @app.route('/api/stats')
 def get_stats():
@@ -230,16 +246,13 @@ def upload_reference():
 @app.route('/api/upload-thumbnails', methods=['POST'])
 def upload_thumbnails():
     """Upload new thumbnails to a specific category"""
-    if 'thumbnails' not in request.files:
-        return jsonify({'error': 'No thumbnail files provided'}), 400
-    
-    category = request.form.get('category')
-    if not category:
-        return jsonify({'error': 'No category specified'}), 400
-    
     try:
-        import uuid
-        from PIL import Image
+        if 'thumbnails' not in request.files:
+            return jsonify({'error': 'No thumbnail files provided'}), 400
+        
+        category = request.form.get('category')
+        if not category:
+            return jsonify({'error': 'No category specified'}), 400
         
         # Create category directory if it doesn't exist
         category_dir = Path("thumbnails") / category
@@ -247,6 +260,7 @@ def upload_thumbnails():
         
         files = request.files.getlist('thumbnails')
         uploaded = 0
+        errors = []
         
         for file in files:
             if file.filename == '':
@@ -254,11 +268,13 @@ def upload_thumbnails():
             
             # Validate file type
             if not file.content_type or not file.content_type.startswith('image/'):
+                errors.append(f"{file.filename}: Invalid file type")
                 continue
             
             # Generate unique filename
             ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
             if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+                errors.append(f"{file.filename}: Unsupported extension")
                 continue
             
             # Use original filename or generate unique one if exists
@@ -279,32 +295,45 @@ def upload_thumbnails():
                 img = Image.open(str(filepath))
                 img.verify()
                 uploaded += 1
+                print(f"✅ Uploaded: {filename}")
             except Exception as e:
                 # If not a valid image, delete it
                 filepath.unlink(missing_ok=True)
+                errors.append(f"{file.filename}: {str(e)}")
                 print(f"⚠️ Invalid image file: {file.filename} - {e}")
                 continue
         
         if uploaded == 0:
-            return jsonify({'error': 'No valid images were uploaded'}), 400
+            error_msg = 'No valid images were uploaded'
+            if errors:
+                error_msg += f". Errors: {'; '.join(errors[:3])}"
+            return jsonify({'error': error_msg}), 400
         
         # Rebuild thumbnail index
         global finder
         finder = ThumbnailFinder("thumbnails")
         finder.index_thumbnails()
         
-        return jsonify({
+        response = {
             'success': True,
             'uploaded': uploaded,
             'category': category,
             'message': f'Successfully uploaded {uploaded} thumbnail(s) to {category}'
-        })
+        }
+        if errors:
+            response['warnings'] = errors
+        
+        return jsonify(response), 200
     
     except Exception as e:
-        print(f"❌ Upload error: {e}")
+        error_msg = str(e)
+        print(f"❌ Upload error: {error_msg}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'error': f'Upload failed: {error_msg}',
+            'details': traceback.format_exc()
+        }), 500
 
 @app.route('/api/generate', methods=['POST'])
 def generate_thumbnail():
