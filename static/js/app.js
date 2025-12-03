@@ -282,7 +282,10 @@ function updateUploadButton() {
     const categorySelect = document.getElementById('upload-category');
     const fileCount = document.getElementById('upload-file-count');
     
-    fileCount.textContent = uploadFiles.length;
+    // Check if element exists before updating
+    if (fileCount) {
+        fileCount.textContent = uploadFiles.length;
+    }
     uploadBtn.disabled = uploadFiles.length === 0 || !categorySelect.value;
 }
 
@@ -316,7 +319,6 @@ async function uploadThumbnails(category) {
             document.getElementById('upload-input').value = '';
             document.getElementById('upload-category').value = '';
             displayUploadPreview();
-            updateUploadButton();
             
             // Reload canvas to show new thumbnails
             await loadCanvasData();
@@ -331,8 +333,12 @@ async function uploadThumbnails(category) {
         showToast(`Upload failed: ${error.message}`, 'error');
         hideLoadingOverlay();
     } finally {
-        uploadBtn.disabled = false;
+        // Reset button to initial state
         uploadBtn.innerHTML = '<span class="btn-icon">⬆</span> Upload <span id="upload-file-count">0</span> file(s)';
+        uploadBtn.disabled = false;
+        
+        // Now update the button (element exists now)
+        updateUploadButton();
     }
 }
 
