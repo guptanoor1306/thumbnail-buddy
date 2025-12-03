@@ -30,14 +30,38 @@ Path('temp_uploads').mkdir(exist_ok=True)
 # Initialize finder globally
 finder = None
 
+def scan_thumbnails_fast():
+    """Quickly scan thumbnails directory without building embeddings"""
+    thumbnails = []
+    thumbnails_dir = Path("thumbnails")
+    
+    if not thumbnails_dir.exists():
+        return []
+    
+    # Scan all subdirectories (categories)
+    for category_dir in thumbnails_dir.iterdir():
+        if not category_dir.is_dir():
+            continue
+        
+        category = category_dir.name
+        
+        # Find all image files
+        for ext in ['*.jpg', '*.jpeg', '*.png', '*.webp', '*.JPG', '*.JPEG', '*.PNG']:
+            for img_file in category_dir.glob(ext):
+                thumbnails.append({
+                    'filename': img_file.name,
+                    'path': str(img_file),
+                    'category': category
+                })
+    
+    return thumbnails
+
 def init_finder():
     global finder
     if finder is None:
         finder = ThumbnailFinder("thumbnails")
-        # Force index if empty
-        if finder.get_thumbnail_count() == 0:
-            print("📸 No thumbnails in index, indexing now...")
-            finder.index_thumbnails()
+        # Don't auto-index - too slow for Railway startup
+        # Index will be built on-demand or via /api/rebuild-index
     return finder
 
 @app.route('/')
@@ -59,7 +83,15 @@ def get_stats():
     """Get statistics"""
     finder = init_finder()
     thumbnail_count = finder.get_thumbnail_count()
-    categories = finder.get_categories()
+    
+    # If no count from index, count from filesystem directly
+    if thumbnail_count == 0:
+        thumbnails = scan_thumbnails_fast()
+        thumbnail_count = len(thumbnails)
+        # Extract unique categories
+        categories = list(set(t['category'] for t in thumbnails if t.get('category')))
+    else:
+        categories = finder.get_categories()
     
     generated_dir = Path("generated_thumbnails")
     generated_count = 0
@@ -84,7 +116,12 @@ def get_all_thumbnails():
     """Get list of all thumbnails in toolkit (organized by category)"""
     finder = init_finder()
     thumbnails_data = finder.index_data.get("thumbnails", [])
-    categories = finder.get_categories()
+    
+    # If no index data, scan directly from filesystem (faster for Railway)
+    if not thumbnails_data:
+        thumbnails_data = scan_thumbnails_fast()
+    
+    categories = finder.get_categories() if thumbnails_data else []
     
     # Organize thumbnails by category
     categorized = {}
