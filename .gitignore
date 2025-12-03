@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# Large directories - DO NOT TRACK
+thumbnails/
+thumbnails_backup*/
+thumbnails_small/
+thumbnails_full_backup_*/
+generated_thumbnails/
+temp_uploads/
+thumbnail_index.json
+
+# Scripts
+UPLOAD_THUMBNAILS.sh
+deploy_to_railway.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+streamlit.log

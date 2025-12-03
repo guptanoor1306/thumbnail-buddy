@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Buddy - Infinite Canvas</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Panel - Controls -->
+        <aside class="left-panel">
+            <div class="panel-header">
+                <h1 class="logo">
+                    <span class="logo-icon">◈</span>
+                    Thumbnail Buddy
+                </h1>
+                <p class="tagline">AI-powered thumbnail generation</p>
+            </div>
+
+            <!-- Status Indicators -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot" id="openai-dot"></span>
+                    <span>OpenAI</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" id="google-dot"></span>
+                    <span>Google</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-count" id="thumbnail-count">0</span>
+                    <span>Thumbnails</span>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="topic">Topic</label>
+                    <input type="text" id="topic" class="input-field" placeholder="e.g., How to Build Wealth in Your 20s">
+                </div>
+                <div class="input-group">
+                    <label for="pov">Point of View <span class="optional">(optional)</span></label>
+                    <input type="text" id="pov" class="input-field" placeholder="e.g., Beginner Friendly">
+                </div>
+            </div>
+
+            <!-- Selection Info -->
+            <div class="selection-section">
+                <div class="selection-header">
+                    <h3>Selected Thumbnails</h3>
+                    <span class="selection-count"><span id="selected-count">0</span>/2</span>
+                </div>
+                <div class="selection-preview" id="selection-preview">
+                    <div class="empty-selection">
+                        <span class="empty-icon">⬚</span>
+                        <p>Select 1-2 thumbnails from the canvas</p>
+                    </div>
+                </div>
+                <button class="btn btn-clear" id="clear-selection-btn" style="display: none;">
+                    Clear Selection
+                </button>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="section-header">
+                    <h3>Upload Thumbnails</h3>
+                    <span class="upload-icon">↑</span>
+                </div>
+                <div class="input-group">
+                    <label for="upload-category">Category</label>
+                    <select id="upload-category" class="input-field">
+                        <option value="">Select category...</option>
+                        <option value="Case_Study">Case Study</option>
+                        <option value="Charts_and_All">Charts & All</option>
+                        <option value="Clear_Poppy_Text">Clear Poppy Text</option>
+                        <option value="Curiosity">Curiosity</option>
+                        <option value="Documentary">Documentary</option>
+                        <option value="Heavy_Action">Heavy Action</option>
+                        <option value="Less_Text">Less Text</option>
+                        <option value="Movies">Movies</option>
+                        <option value="No_Face">No Face</option>
+                        <option value="No_Text">No Text</option>
+                        <option value="Podcast">Podcast</option>
+                        <option value="Product">Product</option>
+                        <option value="Series">Series</option>
+                        <option value="Twitter">Twitter</option>
+                        <option value="VS">VS</option>
+                    </select>
+                </div>
+                <div class="upload-dropzone" id="upload-dropzone">
+                    <input type="file" id="upload-input" accept="image/*" multiple style="display: none;">
+                    <div class="dropzone-content">
+                        <span class="dropzone-icon">📁</span>
+                        <p class="dropzone-text">Drop images here or click to browse</p>
+                        <p class="dropzone-hint">Supports JPG, PNG, WebP</p>
+                    </div>
+                </div>
+                <div class="upload-preview" id="upload-preview" style="display: none;"></div>
+                <button class="btn btn-upload" id="upload-btn" disabled>
+                    <span class="btn-icon">⬆</span>
+                    Upload <span id="upload-file-count">0</span> file(s)
+                </button>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="generate-section">
+                <button class="btn btn-generate" id="generate-btn" disabled>
+                    <span class="btn-icon">✦</span>
+                    Generate Thumbnails
+                </button>
+                <p class="generate-hint">Uses Gemini 2.0 Flash Pro + GPT-4 Vision</p>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="canvas" id="canvas-view-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <rect x="1" y="1" width="6" height="6" rx="1"/>
+                        <rect x="9" y="1" width="6" height="6" rx="1"/>
+                        <rect x="1" y="9" width="6" height="6" rx="1"/>
+                        <rect x="9" y="9" width="6" height="6" rx="1"/>
+                    </svg>
+                    Canvas
+                </button>
+                <button class="view-btn" data-view="grid" id="grid-view-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <rect x="1" y="1" width="4" height="4"/>
+                        <rect x="6" y="1" width="4" height="4"/>
+                        <rect x="11" y="1" width="4" height="4"/>
+                        <rect x="1" y="6" width="4" height="4"/>
+                        <rect x="6" y="6" width="4" height="4"/>
+                        <rect x="11" y="6" width="4" height="4"/>
+                        <rect x="1" y="11" width="4" height="4"/>
+                        <rect x="6" y="11" width="4" height="4"/>
+                        <rect x="11" y="11" width="4" height="4"/>
+                    </svg>
+                    Grid
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="panel-footer">
+                <p>Powered by GPT-4 Vision & Gemini 2.0</p>
+            </div>
+        </aside>
+
+        <!-- Right Panel - Canvas -->
+        <main class="right-panel">
+            <!-- Canvas Toolbar -->
+            <div class="canvas-toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        <input type="text" id="search-canvas" placeholder="Search thumbnails...">
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" id="zoom-out" title="Zoom Out">−</button>
+                        <span class="zoom-level" id="zoom-level">100%</span>
+                        <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
+                        <button class="zoom-btn" id="zoom-fit" title="Fit to View">⊡</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="canvas-container" id="canvas-container">
+                <div class="canvas-viewport" id="canvas-viewport">
+                    <div class="canvas-content" id="canvas-content">
+                        <!-- Category sections with pills will be rendered here -->
+                    </div>
+                </div>
+                
+                <!-- Canvas Loading -->
+                <div class="canvas-loading" id="canvas-loading">
+                    <div class="loader"></div>
+                    <p>Loading thumbnails...</p>
+                </div>
+            </div>
+
+            <!-- Grid View (Hidden by default) -->
+            <div class="grid-container" id="grid-container" style="display: none;">
+                <!-- Category Pills for Grid View -->
+                <div class="grid-category-pills" id="grid-category-pills">
+                    <button class="category-pill active" data-category="all">All</button>
+                </div>
+                <div class="grid-content" id="grid-content">
+                    <!-- Grid thumbnails will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Minimap -->
+            <div class="minimap" id="minimap">
+                <div class="minimap-content" id="minimap-content"></div>
+                <div class="minimap-viewport" id="minimap-viewport"></div>
+            </div>
+        </main>
+
+        <!-- Breakdown Panel (Slides in when generating) -->
+        <aside class="breakdown-panel" id="breakdown-panel">
+            <div class="breakdown-header">
+                <h2>✦ Visual Breakdown</h2>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="expand-toggle-btn" id="expand-breakdown" title="Toggle Wide View">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path class="expand-icon" d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                            <path class="collapse-icon" style="display: none;" d="M15 3h3a2 2 0 0 1 2 2v3m0 12v3a2 2 0 0 1-2 2h-3m-6 0H6a2 2 0 0 1-2-2v-3m0-12V6a2 2 0 0 1 2-2h3"/>
+                        </svg>
+                        <span class="expand-label">Wide</span>
+                    </button>
+                    <button class="close-btn" id="close-breakdown">×</button>
+                </div>
+            </div>
+            
+            <div class="breakdown-content" id="breakdown-content">
+                <!-- Step 1: Selected Thumbnails -->
+                <div class="breakdown-step" id="breakdown-step-1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>Selected References</h3>
+                    </div>
+                    <div class="selected-refs" id="breakdown-selected">
+                        <!-- Selected thumbnails will appear here -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Analysis -->
+                <div class="breakdown-step" id="breakdown-step-2" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>AI Analysis</h3>
+                    </div>
+                    <div class="analysis-content" id="breakdown-analysis">
+                        <!-- Analysis will appear here -->
+                    </div>
+                </div>
+
+                <!-- Step 3: Modifications -->
+                <div class="breakdown-step" id="breakdown-step-3" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3>Suggested Changes</h3>
+                    </div>
+                    <div class="modifications-content" id="breakdown-modifications">
+                        <!-- Modifications will appear here -->
+                    </div>
+                </div>
+
+                <!-- Step 4: Generation -->
+                <div class="breakdown-step" id="breakdown-step-4" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h3>Generation</h3>
+                    </div>
+                    <div class="generation-content" id="breakdown-generation">
+                        <div class="generation-service">
+                            <label>Service</label>
+                            <select id="generation-service" class="select-field">
+                                <option value="gemini">🍌 Gemini 2.0 Flash Pro (Nano Banana Pro)</option>
+                                <option value="dalle">🎨 DALL-E 3</option>
+                            </select>
+                        </div>
+                        <div class="prompt-edit">
+                            <label>Edit Prompt</label>
+                            <textarea id="generation-prompt" class="prompt-textarea" rows="6" placeholder="AI-generated prompt will appear here..."></textarea>
+                        </div>
+                        <button class="btn btn-generate-final" id="final-generate-btn">
+                            <span class="btn-icon">⚡</span>
+                            Generate Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Result -->
+                <div class="breakdown-step" id="breakdown-step-5" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">✓</span>
+                        <h3>Generated Result</h3>
+                    </div>
+                    <div class="result-content" id="breakdown-result">
+                        <!-- Generated image will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress indicator -->
+            <div class="breakdown-progress">
+                <div class="progress-step active" data-step="1">1</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="2">2</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="3">3</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="4">4</div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="5">✓</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text" id="loading-text">Processing...</p>
+            <div class="loading-progress" id="loading-progress"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
