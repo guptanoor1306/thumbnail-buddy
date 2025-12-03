@@ -72,9 +72,25 @@ def index():
 @app.route('/health')
 def health():
     """Health check endpoint for Railway"""
+    thumbnails_dir = Path('thumbnails')
+    
+    # Count files in thumbnails directory
+    file_count = 0
+    categories = {}
+    
+    if thumbnails_dir.exists():
+        for category_dir in thumbnails_dir.iterdir():
+            if category_dir.is_dir():
+                files = list(category_dir.glob('*.[jp][pn][g]')) + list(category_dir.glob('*.webp'))
+                if files:
+                    categories[category_dir.name] = len(files)
+                    file_count += len(files)
+    
     return jsonify({
         'status': 'healthy',
-        'thumbnails_dir': Path('thumbnails').exists(),
+        'thumbnails_dir_exists': thumbnails_dir.exists(),
+        'files_on_disk': file_count,
+        'categories_with_files': categories,
         'version': '1.0.0'
     })
 
