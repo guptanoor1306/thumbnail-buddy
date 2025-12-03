@@ -288,19 +288,13 @@ def upload_thumbnails():
                 filepath = category_dir / filename
             
             # Save file
-            file.save(str(filepath))
-            
-            # Validate it's a real image by trying to open it
             try:
-                img = Image.open(str(filepath))
-                img.verify()
+                file.save(str(filepath))
                 uploaded += 1
                 print(f"✅ Uploaded: {filename}")
             except Exception as e:
-                # If not a valid image, delete it
-                filepath.unlink(missing_ok=True)
                 errors.append(f"{file.filename}: {str(e)}")
-                print(f"⚠️ Invalid image file: {file.filename} - {e}")
+                print(f"⚠️ Failed to save: {file.filename} - {e}")
                 continue
         
         if uploaded == 0:
@@ -309,10 +303,8 @@ def upload_thumbnails():
                 error_msg += f". Errors: {'; '.join(errors[:3])}"
             return jsonify({'error': error_msg}), 400
         
-        # Rebuild thumbnail index
-        global finder
-        finder = ThumbnailFinder("thumbnails")
-        finder.index_thumbnails()
+        # Don't rebuild index immediately - too slow
+        # The index will rebuild on next app restart or /api/all-thumbnails call
         
         response = {
             'success': True,
