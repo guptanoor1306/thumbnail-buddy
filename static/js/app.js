@@ -164,10 +164,48 @@ function updateGenerateButton() {
 let uploadFiles = [];
 
 function setupUploadListeners() {
+    const uploadHeader = document.getElementById('upload-header');
+    const uploadContent = document.getElementById('upload-content');
     const dropzone = document.getElementById('upload-dropzone');
     const fileInput = document.getElementById('upload-input');
     const uploadBtn = document.getElementById('upload-btn');
     const categorySelect = document.getElementById('upload-category');
+    const newCategoryInput = document.getElementById('new-category-input');
+    const categoryToggleBtns = document.querySelectorAll('.category-toggle-btn');
+    const existingCategoryGroup = document.getElementById('existing-category-group');
+    const newCategoryGroup = document.getElementById('new-category-group');
+    
+    let categoryMode = 'existing'; // 'existing' or 'new'
+    
+    // Collapsible upload section
+    uploadHeader.addEventListener('click', () => {
+        const isExpanded = uploadContent.style.display !== 'none';
+        uploadContent.style.display = isExpanded ? 'none' : 'block';
+        uploadHeader.classList.toggle('expanded', !isExpanded);
+    });
+    
+    // Category mode toggle
+    categoryToggleBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent header collapse
+            categoryMode = btn.dataset.mode;
+            
+            // Update button states
+            categoryToggleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Show/hide appropriate input
+            if (categoryMode === 'existing') {
+                existingCategoryGroup.style.display = 'block';
+                newCategoryGroup.style.display = 'none';
+            } else {
+                existingCategoryGroup.style.display = 'none';
+                newCategoryGroup.style.display = 'block';
+            }
+            
+            updateUploadButton();
+        });
+    });
     
     // Click to browse
     dropzone.addEventListener('click', () => {
@@ -197,20 +235,38 @@ function setupUploadListeners() {
     
     // Upload button
     uploadBtn.addEventListener('click', () => {
-        const category = categorySelect.value;
-        if (!category) {
-            showToast('Please select a category', 'error');
-            return;
+        let category;
+        
+        if (categoryMode === 'existing') {
+            category = categorySelect.value;
+            if (!category) {
+                showToast('Please select a category', 'error');
+                return;
+            }
+        } else {
+            category = newCategoryInput.value.trim();
+            if (!category) {
+                showToast('Please enter a category name', 'error');
+                return;
+            }
+            // Validate category name (alphanumeric and underscores only)
+            if (!/^[a-zA-Z0-9_]+$/.test(category)) {
+                showToast('Category name can only contain letters, numbers, and underscores', 'error');
+                return;
+            }
         }
+        
         if (uploadFiles.length === 0) {
             showToast('Please select files to upload', 'error');
             return;
         }
+        
         uploadThumbnails(category);
     });
     
-    // Category selection
+    // Category selection changes
     categorySelect.addEventListener('change', updateUploadButton);
+    newCategoryInput.addEventListener('input', updateUploadButton);
 }
 
 function handleFiles(files) {
@@ -280,13 +336,26 @@ function displayUploadPreview() {
 function updateUploadButton() {
     const uploadBtn = document.getElementById('upload-btn');
     const categorySelect = document.getElementById('upload-category');
+    const newCategoryInput = document.getElementById('new-category-input');
     const fileCount = document.getElementById('upload-file-count');
     
     // Check if element exists before updating
     if (fileCount) {
         fileCount.textContent = uploadFiles.length;
     }
-    uploadBtn.disabled = uploadFiles.length === 0 || !categorySelect.value;
+    
+    // Determine if we have a valid category based on mode
+    let hasCategory = false;
+    const categoryToggleBtns = document.querySelectorAll('.category-toggle-btn');
+    const activeMode = Array.from(categoryToggleBtns).find(btn => btn.classList.contains('active'))?.dataset.mode || 'existing';
+    
+    if (activeMode === 'existing') {
+        hasCategory = categorySelect && categorySelect.value;
+    } else {
+        hasCategory = newCategoryInput && newCategoryInput.value.trim().length > 0;
+    }
+    
+    uploadBtn.disabled = uploadFiles.length === 0 || !hasCategory;
 }
 
 async function uploadThumbnails(category) {
@@ -312,13 +381,23 @@ async function uploadThumbnails(category) {
         const result = await response.json();
         
         if (response.ok) {
-            showToast(`Successfully uploaded ${result.uploaded} thumbnail(s)!`, 'success');
+            const categoryName = result.category.replace(/_/g, ' ');
+            showToast(`Successfully uploaded ${result.uploaded} thumbnail(s) to ${categoryName}!`, 'success');
             
             // Clear upload state
             uploadFiles = [];
             document.getElementById('upload-input').value = '';
             document.getElementById('upload-category').value = '';
+            document.getElementById('new-category-input').value = '';
             displayUploadPreview();
+            
+            // Collapse upload section
+            const uploadContent = document.getElementById('upload-content');
+            const uploadHeader = document.getElementById('upload-header');
+            if (uploadContent && uploadHeader) {
+                uploadContent.style.display = 'none';
+                uploadHeader.classList.remove('expanded');
+            }
             
             // Reload canvas to show new thumbnails
             await loadCanvasData();

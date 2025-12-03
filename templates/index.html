@@ -68,44 +68,59 @@
 
             <!-- Upload Section -->
             <div class="upload-section">
-                <div class="section-header">
-                    <h3>Upload Thumbnails</h3>
+                <div class="section-header collapsible" id="upload-header">
+                    <div class="header-left">
+                        <span class="chevron">▶</span>
+                        <h3>Upload Thumbnails</h3>
+                    </div>
                     <span class="upload-icon">↑</span>
                 </div>
-                <div class="input-group">
-                    <label for="upload-category">Category</label>
-                    <select id="upload-category" class="input-field">
-                        <option value="">Select category...</option>
-                        <option value="Case_Study">Case Study</option>
-                        <option value="Charts_and_All">Charts & All</option>
-                        <option value="Clear_Poppy_Text">Clear Poppy Text</option>
-                        <option value="Curiosity">Curiosity</option>
-                        <option value="Documentary">Documentary</option>
-                        <option value="Heavy_Action">Heavy Action</option>
-                        <option value="Less_Text">Less Text</option>
-                        <option value="Movies">Movies</option>
-                        <option value="No_Face">No Face</option>
-                        <option value="No_Text">No Text</option>
-                        <option value="Podcast">Podcast</option>
-                        <option value="Product">Product</option>
-                        <option value="Series">Series</option>
-                        <option value="Twitter">Twitter</option>
-                        <option value="VS">VS</option>
-                    </select>
-                </div>
-                <div class="upload-dropzone" id="upload-dropzone">
-                    <input type="file" id="upload-input" accept="image/*" multiple style="display: none;">
-                    <div class="dropzone-content">
-                        <span class="dropzone-icon">📁</span>
-                        <p class="dropzone-text">Drop images here or click to browse</p>
-                        <p class="dropzone-hint">Supports JPG, PNG, WebP</p>
+                <div class="upload-content" id="upload-content" style="display: none;">
+                    <div class="input-group">
+                        <label>Category</label>
+                        <div class="category-toggle">
+                            <button class="category-toggle-btn active" data-mode="existing">Existing</button>
+                            <button class="category-toggle-btn" data-mode="new">New Category</button>
+                        </div>
                     </div>
+                    <div class="input-group" id="existing-category-group">
+                        <select id="upload-category" class="input-field">
+                            <option value="">Select category...</option>
+                            <option value="Case_Study">Case Study</option>
+                            <option value="Charts_and_All">Charts & All</option>
+                            <option value="Clear_Poppy_Text">Clear Poppy Text</option>
+                            <option value="Curiosity">Curiosity</option>
+                            <option value="Documentary">Documentary</option>
+                            <option value="Heavy_Action">Heavy Action</option>
+                            <option value="Less_Text">Less Text</option>
+                            <option value="Movies">Movies</option>
+                            <option value="No_Face">No Face</option>
+                            <option value="No_Text">No Text</option>
+                            <option value="Podcast">Podcast</option>
+                            <option value="Product">Product</option>
+                            <option value="Series">Series</option>
+                            <option value="Twitter">Twitter</option>
+                            <option value="VS">VS</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="new-category-group" style="display: none;">
+                        <input type="text" id="new-category-input" class="input-field" placeholder="e.g., Tech_Reviews">
+                        <p class="input-hint">Use underscores for spaces (e.g., Tech_Reviews)</p>
+                    </div>
+                    <div class="upload-dropzone" id="upload-dropzone">
+                        <input type="file" id="upload-input" accept="image/*" multiple style="display: none;">
+                        <div class="dropzone-content">
+                            <span class="dropzone-icon">📁</span>
+                            <p class="dropzone-text">Drop images here or click to browse</p>
+                            <p class="dropzone-hint">Supports JPG, PNG, WebP</p>
+                        </div>
+                    </div>
+                    <div class="upload-preview" id="upload-preview" style="display: none;"></div>
+                    <button class="btn btn-upload" id="upload-btn" disabled>
+                        <span class="btn-icon">⬆</span>
+                        Upload <span id="upload-file-count">0</span> file(s)
+                    </button>
                 </div>
-                <div class="upload-preview" id="upload-preview" style="display: none;"></div>
-                <button class="btn btn-upload" id="upload-btn" disabled>
-                    <span class="btn-icon">⬆</span>
-                    Upload <span id="upload-file-count">0</span> file(s)
-                </button>
             </div>
 
             <!-- Generate Button -->
